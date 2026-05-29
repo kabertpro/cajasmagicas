@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>¡Cajas Mágicas: El Reto de los Duendes!</title>
+    <style>
+        /* --- ESTILOS GENERALES Y TEMÁTICA GAME --- */
+        @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Rubik+Mono+One&family=Quicksand:wght@600;800&display=swap');
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden; /* Elimina cualquier deslizamiento de pantalla */
+            background: radial-gradient(circle, #2c3e50, #0f172a);
+            font-family: 'Quicksand', sans-serif;
+            color: #fff;
+            touch-action: none; /* Bloquea gestos de scroll del navegador */
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        h1, h2, h3 {
+            font-family: 'Fredoka One', cursive;
+            text-shadow: 2px 2px 0px #000;
+        }
+
+        /* --- DETECTOR OBLIGATORIO DE PANTALLA HORIZONTAL --- */
+        #rotate-device-screen {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: #1e1b4b;
+            z-index: 9999;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .phone-icon {
+            font-size: 60px;
+            margin-bottom: 20px;
+            animation: rotateAnim 2s infinite ease-in-out;
+        }
+
+        @keyframes rotateAnim {
+            0% { transform: rotate(0deg); }
+            50% { transform: rotate(-90deg); }
+            100% { transform: rotate(0deg); }
+        }
+
+        /* Activar bloqueo si la pantalla está en vertical */
+        @media (orientation: portrait) {
+            #rotate-device-screen { display: flex; }
+        }
+
+        /* --- PANTALLA SPLASH DE BIENVENIDA --- */
+        #splash-screen {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(135deg, #1e1b4b, #311042);
+            z-index: 200;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        .game-logo {
+            font-family: 'Rubik Mono One', monospace;
+            font-size: 5vw;
+            color: #ff007f;
+            text-shadow: 4px 4px 0px #000, -2px -2px 0px #00ffff, 0 0 30px rgba(255,0,127,0.6);
+            margin-bottom: 10px;
+            animation: pulse 1.5s infinite alternate;
+        }
+
+        .game-subtitle {
+            font-size: 3vw;
+            color: #ffcb05;
+            margin-bottom: 30px;
+            text-shadow: 3px 3px 0px #000;
+        }
+
+        .btn-play-game {
+            background: linear-gradient(to bottom, #4ade80, #22c55e);
+            color: white;
+            font-size: 2.5vw;
+            padding: 15px 50px;
+            border-radius: 50px;
+            border: 4px solid #fff;
+            box-shadow: 0 8px 0px #15803d, 0 15px 25px rgba(0,0,0,0.5);
+            cursor: pointer;
+            font-family: 'Fredoka One', cursive;
+        }
+
+        /* --- MENU DE CONFIGURACIÓN --- */
+        #setup-screen {
+            display: none;
+            background: rgba(30, 41, 59, 0.95);
+            padding: 20px 30px;
+            border-radius: 25px;
+            box-shadow: 0 15px 0px #0f172a, 0 20px 40px rgba(0,0,0,0.6);
+            width: 85vw;
+            max-height: 90vh;
+            overflow-y: auto; /* Permite scroll interno SOLO si la pantalla es muy pequeña */
+            border: 5px solid #ffcb05;
+            animation: popIn 0.4s ease;
+        }
+
+        /* Ocultar barra de scroll interna del menú en navegadores */
+        #setup-screen::-webkit-scrollbar { display: none; }
+
+        .setup-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .section-box {
+            background-color: #0f172a;
+            padding: 12px 15px;
+            border-radius: 15px;
+            border: 3px solid #334155;
+        }
+
+        .section-box h3 {
+            color: #00ffff;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .mode-buttons, .box-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        button.btn-toggle {
+            font-family: 'Fredoka One', cursive;
+            padding: 8px 16px;
+            font-size: 13px;
+            border: 2px solid #000;
+            border-radius: 14px;
+            cursor: pointer;
+            background: #334155;
+            color: #94a3b8;
+            box-shadow: 0 3px 0px #000;
+        }
+
+        button.btn-toggle.active {
+            background: linear-gradient(to bottom, #ff9f43, #ff6b6b);
+            color: white;
+            box-shadow: 0 3px 0px #991b1b;
+            transform: translateY(-1px);
+        }
+
+        .input-number-style {
+            width: 100%;
+            padding: 8px;
+            border-radius: 10px;
+            border: 2px solid #3b82f6;
+            background: #1e293b;
+            color: #fff;
+            font-family: 'Fredoka One', cursive;
+            font-size: 16px;
+            text-align: center;
+        }
+
+        .file-slot {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #1e293b;
+            padding: 6px 12px;
+            border-radius: 12px;
+            border: 2px dashed #475569;
+        }
+
+        .file-slot label {
+            background: #3b82f6;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 12px;
+        }
+
+        .file-slot input[type="file"] { display: none; }
+
+        .preview-img {
+            width: 36px;
+            height: 36px;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 2px solid #3b82f6;
+        }
+
+        #btn-start {
+            background: linear-gradient(to bottom, #ff4757, #ff2e44);
+            color: white;
+            font-size: 22px;
+            width: 100%;
+            padding: 12px;
+            border-radius: 20px;
+            border: 3px solid #fff;
+            box-shadow: 0 6px 0px #b91c1c;
+            cursor: pointer;
+            font-family: 'Fredoka One', cursive;
+        }
+
+        /* --- PANTALLA DE JUEGO MÁXIMO RENDIMIENTO --- */
+        #game-screen {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100vw;
+            height: 100vh;
+            padding: 10px;
+            position: relative;
+        }
+
+        #status-message {
+            font-family: 'Fredoka One', cursive;
+            font-size: 4vh;
+            color: #ffcb05;
+            text-align: center;
+            margin-bottom: 10px;
+            text-shadow: 3px 3px 0px #000;
+            min-height: 45px;
+        }
+
+        #table-board {
+            position: relative;
+            width: 90vw;
+            height: 70vh;
+            background-color: #7c2d12;
+            background-image: 
+                linear-gradient(rgba(0, 0, 0, 0.1) 50%, transparent 50%),
+                linear-gradient(90deg, rgba(255,255,255,0.02) 2px, transparent 2px);
+            background-size: 100% 40px, 40px 100%;
+            border: 15px solid #451a03;
+            border-radius: 25px;
+            box-shadow: inset 0 0 40px rgba(0,0,0,0.7), 0 15px 30px rgba(0,0,0,0.5);
+        }
+
+        /* --- CAJAS SORPRESA CON POSICIONAMIENTO PORCENTUAL DINÁMICO --- */
+        .box-container {
+            position: absolute;
+            width: 14vh;
+            height: 14vh;
+            /* Transiciones de coordenadas fluidas y responsivas sin lag */
+            transition: left var(--speed, 0.5s) ease-in-out, top var(--speed, 0.5s) ease-in-out;
+            z-index: 10;
+            transform: translate(-50%, -50%); /* Centrado exacto en los nodos de la matriz */
+        }
+
+        .box-container.moving { z-index: 25; }
+
+        .box-sprite {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            background: #38bdf8;
+            border: 4px solid #0284c7;
+            border-radius: 14px;
+            box-shadow: 0 8px 0px #0369a1, 0 10px 15px rgba(0,0,0,0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .box-sprite::before, .box-sprite::after {
+            content: '';
+            position: absolute;
+            background-color: #f43f5e;
+            border: 1.5px solid #000;
+        }
+        .box-sprite::before { top: 0; bottom: 0; left: calc(50% - 7px); width: 14px; }
+        .box-sprite::after { left: 0; right: 0; top: calc(50% - 7px); height: 14px; }
+
+        .box-question {
+            position: absolute;
+            font-family: 'Rubik Mono One', monospace;
+            font-size: 4vh;
+            color: #fff;
+            text-shadow: 2px 2px 0px #000;
+            z-index: 5;
+        }
+
+        .character-slot {
+            position: absolute;
+            top: 8px; left: 8px; right: 8px; bottom: 8px;
+            background-color: #fef08a;
+            border-radius: 8px;
+            border: 2px solid #eab308;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            z-index: 2;
+            opacity: 0;
+            transform: scale(0);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.25), opacity 0.2s;
+        }
+
+        .character-slot img { width: 100%; height: 100%; object-fit: cover; }
+
+        /* --- ESTADOS DE LA CAJA --- */
+        .box-container.open .box-sprite { transform: translateY(-5px); box-shadow: 0 12px 15px rgba(0,0,0,0.5); }
+        .box-container.open .box-question { opacity: 0; }
+        .box-container.open .character-slot { opacity: 1; transform: scale(1.1); z-index: 6; }
+        .box-container.correct .character-slot { border: 4px solid #22c55e; animation: winBounce 0.5s infinite alternate; }
+        .box-container.wrong .box-sprite { background: #ef4444; border-color: #b91c1c; box-shadow: 0 4px 0px #7f1d1d; }
+        .box-container.interactive { cursor: pointer; }
+
+        /* --- FOOTER DISCRETO Y ELEGANTE --- */
+        .game-footer {
+            margin-top: 8px;
+            font-size: 11px;
+            letter-spacing: 1px;
+            color: #475569;
+            font-weight: bold;
+        }
+        .game-footer span { color: #64748b; font-family: 'Fredoka One', cursive; }
+
+        /* --- CUENTA REGRESIVA E INTERFAZ MODAL --- */
+        #countdown-overlay {
+            display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.4); z-index: 50; align-items: center; justify-content: center; border-radius: 10px;
+        }
+        #countdown-text { font-family: 'Rubik Mono One', monospace; font-size: 18vh; color: #00ffff; text-shadow: 6px 6px 0px #000; animation: zoomOut 1s infinite ease-in-out; }
+
+        #result-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(15, 23, 42, 0.9); z-index: 100; align-items: center; justify-content: center; }
+        .modal-content { background: linear-gradient(135deg, #1e293b, #0f172a); padding: 30px; border-radius: 25px; text-align: center; max-width: 450px; width: 85%; border: 5px solid #4ade80; }
+        .modal-content.fail { border-color: #ef4444; }
+        .modal-content h2 { font-size: 30px; margin-bottom: 10px; color: #ffcb05; }
+        .modal-content p { font-size: 16px; margin-bottom: 20px; color: #cbd5e1; }
+        .btn-modal { background: linear-gradient(to bottom, #3b82f6, #1d4ed8); color: white; font-size: 18px; padding: 10px 30px; border-radius: 50px; border: 2px solid #fff; box-shadow: 0 4px 0px #1e40af; font-family: 'Fredoka One', cursive; cursor: pointer; }
+
+        /* --- ANIMACIONES --- */
+        @keyframes pulse { from { transform: scale(1); } to { transform: scale(1.03); } }
+        @keyframes popIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        @keyframes zoomOut { 0% { transform: scale(1.4); opacity: 0; } 50% { opacity: 1; } 100% { transform: scale(0.8); opacity: 0; } }
+        @keyframes winBounce { from { transform: scale(1.1) translateY(0); } to { transform: scale(1.1) translateY(-8px); } }
+    </style>
+</head>
+<body>
+
+    <!-- BLOQUEO OBLIGATORIO HORIZONTAL -->
+    <div id="rotate-device-screen">
+        <div class="phone-icon">📱🔄</div>
+        <h2>¡Gira tu pantalla!</h2>
+        <p style="margin-top: 10px; color: #94a3b8;">Para disfrutar este reto con los duendes, juega en modo horizontal.</p>
+    </div>
+
+    <!-- PANTALLA SPLASH DE BIENVENIDA -->
+    <div id="splash-screen">
+        <div class="game-logo">¡CAJAS MÁGICAS!</div>
+        <div class="game-subtitle">El Reto de los Duendes 🌟</div>
+        <button class="btn-play-game" onclick="enterMenu()">¡JUGAR YA! 🕹️</button>
+    </div>
+
+    <!-- PANTALLA DE CONFIGURACIÓN -->
+    <div id="setup-screen">
+        <h2 style="text-align: center; color: #ffcb05; margin-bottom: 15px; font-size: 24px;">⚙️ Ajustes del Reto</h2>
+        
+        <div class="setup-grid">
+            <div class="section-box">
+                <h3>1. Modo de Juego:</h3>
+                <div class="mode-buttons">
+                    <button type="button" class="btn-toggle active" id="btn-mode-1" onclick="setMode(1)">1 Personaje</button>
+                    <button type="button" class="btn-toggle" id="btn-mode-2" onclick="setMode(2)">2 Personajes (8 Cajas)</button>
+                </div>
+            </div>
+
+            <div class="section-box" id="box-count-section">
+                <h3>2. Cantidad de Cajas:</h3>
+                <div class="box-buttons">
+                    <button type="button" class="btn-toggle" onclick="setBoxCount(2)">2</button>
+                    <button type="button" class="btn-toggle active" onclick="setBoxCount(3)">3</button>
+                    <button type="button" class="btn-toggle" onclick="setBoxCount(4)">4 (Esquinas)</button>
+                </div>
+            </div>
+
+            <div class="section-box">
+                <h3>3. Ajuste de Velocidad:</h3>
+                <div class="box-buttons">
+                    <button type="button" class="btn-toggle" id="speed-slow" onclick="setSpeed(800)">🐢 Lento</button>
+                    <button type="button" class="btn-toggle active" id="speed-normal" onclick="setSpeed(500)">⚡ Normal</button>
+                    <button type="button" class="btn-toggle" id="speed-fast" onclick="setSpeed(300)">🚀 Rápido</button>
+                </div>
+            </div>
+
+            <div class="section-box">
+                <h3>4. Duración de la Mezcla (Minutos):</h3>
+                <input type="number" id="mix-duration" class="input-number-style" min="1" value="1">
+            </div>
+        </div>
+
+        <div class="section-box" style="margin-bottom: 15px;">
+            <h3>5. Sube tus Imágenes (Opcional):</h3>
+            <div style="display: grid; grid-template-columns: 1fr; gap: 8px;" id="file-wrapper">
+                <div class="file-slot" id="slot-img1">
+                    <label for="input-img1">📁 Foto 1</label>
+                    <input type="file" id="input-img1" accept="image/*" onchange="handleFileSelect(event, 1)">
+                    <img id="prev-img1" class="preview-img" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%2338bdf8' stroke-width='2'><rect x='3' y='3' width='18' height='18' rx='2'/><circle cx='8.5' cy='8.5' r='1.5'/><polyline points='21 15 16 10 5 21'/></svg>">
+                </div>
+                <div class="file-slot" id="slot-img2" style="display: none;">
+                    <label for="input-img2">📁 Foto 2</label>
+                    <input type="file" id="input-img2" accept="image/*" onchange="handleFileSelect(event, 2)">
+                    <img id="prev-img2" class="preview-img" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%2338bdf8' stroke-width='2'><rect x='3' y='3' width='18' height='18' rx='2'/><circle cx='8.5' cy='8.5' r='1.5'/><polyline points='21 15 16 10 5 21'/></svg>">
+                </div>
+            </div>
+        </div>
+
+        <button id="btn-start" onclick="startGame()">¡A MEZCLAR! 🚀</button>
+    </div>
+
+    <!-- PANTALLA DE JUEGO -->
+    <div id="game-screen">
+        <div id="status-message">¡Mira bien dónde se esconden!</div>
+        <div id="table-board">
+            <div id="countdown-overlay">
+                <div id="countdown-text">3</div>
+            </div>
+        </div>
+        <div class="game-footer">Powered by <span>Kabert Studio - LMKE</span></div>
+    </div>
+
+    <!-- MODAL DE RESULTADOS -->
+    <div id="result-modal">
+        <div class="modal-content" id="modal-box">
+            <h2 id="modal-title">¡GANASTE! 🎉</h2>
+            <p id="modal-body">¡Increíble vista!</p>
+            <button class="btn-modal" onclick="resetToMenu()">JUGAR OTRA VEZ 🔄</button>
+        </div>
+    </div>
+
+    <script>
+        /* --- MOTOR DE SONIDO (NATIVO SINTETIZADO) Y MÚSICA BACKGROUND --- */
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        let bgMusic = null;
+
+        function initMusic() {
+            if (!bgMusic) {
+                bgMusic = new Audio('music.mp3');
+                bgMusic.loop = true;
+                bgMusic.volume = 0.4;
+            }
+            bgMusic.play().catch(e => console.log("La reproducción automática requiere interacción previa"));
+        }
+
+        function playSound(type) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain); gain.connect(audioCtx.destination);
+
+            if (type === 'countdown') {
+                osc.frequency.setValueAtTime(440, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.15);
+            } else if (type === 'shuffle') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(250, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(550, audioCtx.currentTime + 0.18);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.18);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.18);
+            } else if (type === 'win') {
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(523, audioCtx.currentTime);
+                osc.frequency.setValueAtTime(659, audioCtx.currentTime + 0.1);
+                osc.frequency.setValueAtTime(784, audioCtx.currentTime + 0.2);
+                gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.5);
+            } else if (type === 'fail') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(280, audioCtx.currentTime);
+                osc.frequency.linearRampToValueAtTime(90, audioCtx.currentTime + 0.35);
+                gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.35);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.35);
+            }
+        }
+
+        /* --- CONFIGURACIÓN DE ESTADO --- */
+        let gameState = {
+            mode: 1, totalBoxes: 3, image1: null, image2: null,
+            boxes: [], shuffling: false, revealedCount: 0, attemptsLeft: 2,
+            animationSpeed: 500, mixDurationMinutes: 1
+        };
+
+        const defaultImg1 = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='40' fill='%23ff9f43'/><circle cx='35' cy='45' r='6' fill='white'/><circle cx='65' cy='45' r='6' fill='white'/><circle cx='35' cy='45' r='3' fill='black'/><circle cx='65' cy='45' r='3' fill='black'/><path d='M35 60 Q50 75 65 60' fill='none' stroke='black' stroke-width='4' stroke-linecap='round'/></svg>";
+        const defaultImg2 = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='40' fill='%2300ffff'/><circle cx='35' cy='45' r='6' fill='white'/><circle cx='65' cy='45' r='6' fill='white'/><circle cx='35' cy='45' r='3' fill='black'/><circle cx='65' cy='45' r='3' fill='black'/><path d='M35 65 Q50 50 65 65' fill='none' stroke='black' stroke-width='4' stroke-linecap='round'/></svg>";
+
+        function enterMenu() {
+            initMusic();
+            document.getElementById('splash-screen').style.display = 'none';
+            document.getElementById('setup-screen').style.display = 'block';
+        }
+
+        function setMode(mode) {
+            gameState.mode = mode;
+            document.getElementById('btn-mode-1').classList.toggle('active', mode === 1);
+            document.getElementById('btn-mode-2').classList.toggle('active', mode === 2);
+            const boxSection = document.getElementById('box-count-section');
+            const slotImg2 = document.getElementById('slot-img2');
+
+            if (mode === 2) {
+                gameState.totalBoxes = 8;
+                boxSection.style.display = 'none';
+                slotImg2.style.display = 'flex';
+            } else {
+                const activeBoxBtn = boxSection.querySelector('.btn-toggle.active');
+                gameState.totalBoxes = parseInt(activeBoxBtn.innerText);
+                boxSection.style.display = 'block';
+                slotImg2.style.display = 'none';
+            }
+        }
+
+        function setBoxCount(count) {
+            gameState.totalBoxes = count;
+            document.querySelectorAll('#box-count-section .btn-toggle').forEach(btn => {
+                btn.classList.toggle('active', parseInt(btn.innerText) === count);
+            });
+        }
+
+        function setSpeed(ms) {
+            gameState.animationSpeed = ms;
+            document.getElementById('speed-slow').classList.toggle('active', ms === 800);
+            document.getElementById('speed-normal').classList.toggle('active', ms === 500);
+            document.getElementById('speed-fast').classList.toggle('active', ms === 300);
+        }
+
+        function handleFileSelect(event, index) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                if (index === 1) {
+                    gameState.image1 = e.target.result;
+                    document.getElementById('prev-img1').src = e.target.result;
+                } else {
+                    gameState.image2 = e.target.result;
+                    document.getElementById('prev-img2').src = e.target.result;
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function startGame() {
+            let durationInput = parseInt(document.getElementById('mix-duration').value);
+            gameState.mixDurationMinutes = isNaN(durationInput) || durationInput < 1 ? 1 : durationInput;
+
+            if (!gameState.image1) gameState.image1 = defaultImg1;
+            if (!gameState.image2) gameState.image2 = gameState.image1;
+
+            document.getElementById('setup-screen').style.display = 'none';
+            document.getElementById('game-screen').style.display = 'flex';
+            document.documentElement.style.setProperty('--speed', `${gameState.animationSpeed}ms`);
+
+            buildBoard();
+        }
+
+        /* --- REDISTRIBUCIÓN ULTRA-RESPONSIVA --- */
+        function buildBoard() {
+            const board = document.getElementById('table-board');
+            const overlay = document.getElementById('countdown-overlay');
+            board.innerHTML = ''; board.appendChild(overlay);
+
+            gameState.boxes = []; gameState.revealedCount = 0; gameState.attemptsLeft = 2;
+
+            let total = gameState.totalBoxes;
+            let itemsConfig = [];
+            if (gameState.mode === 1) {
+                itemsConfig.push({ hasItem: true, img: gameState.image1 });
+                for (let i = 1; i < total; i++) itemsConfig.push({ hasItem: false, img: null });
+            } else {
+                itemsConfig.push({ hasItem: true, img: gameState.image1 });
+                itemsConfig.push({ hasItem: true, img: gameState.image2 });
+                for (let i = 2; i < total; i++) itemsConfig.push({ hasItem: false, img: null });
+            }
+            itemsConfig.sort(() => Math.random() - 0.5);
+
+            for (let i = 0; i < total; i++) {
+                const boxEl = document.createElement('div');
+                boxEl.className = 'box-container open';
+                boxEl.innerHTML = `
+                    <div class="box-sprite">
+                        <div class="box-question">?</div>
+                        <div class="character-slot">${itemsConfig[i].hasItem ? `<img src="${itemsConfig[i].img}">` : ''}</div>
+                    </div>
+                `;
+                board.appendChild(boxEl);
+
+                gameState.boxes.push({ element: boxEl, hasItem: itemsConfig[i].hasItem, currentSlotIndex: i });
+            }
+
+            refreshPhysicalPositions();
+            updateStatus("¡MEMORIZA LOS PERSONAJES! 👁️👁️", "#ffcb05");
+
+            setTimeout(() => {
+                gameState.boxes.forEach(box => box.element.classList.remove('open'));
+                setTimeout(() => {
+                    runGiantCountdown(3, () => { startShufflingEngine(); });
+                }, 600);
+            }, 3000);
+        }
+
+        /* --- COORDENADAS PORCENTUALES DE ALTA PRECISIÓN --- */
+        function refreshPhysicalPositions() {
+            let total = gameState.totalBoxes;
+            let cols = total <= 4 ? total : 4;
+            let rows = Math.ceil(total / cols);
+
+            if (total === 4) { cols = 2; rows = 2; }
+
+            gameState.boxes.forEach(box => {
+                let sIdx = box.currentSlotIndex;
+                let c = sIdx % cols;
+                let r = Math.floor(sIdx / cols);
+
+                let pctX, pctY;
+                if (total === 4) {
+                    // Posicionamiento extremo en las esquinas responsivo
+                    pctX = c === 0 ? 15 : 85;
+                    pctY = r === 0 ? 20 : 80;
+                } else {
+                    pctX = ((c + 0.5) / cols) * 100;
+                    pctY = ((r + 0.5) / rows) * 100;
+                }
+
+                box.element.style.left = `${pctX}%`;
+                box.element.style.top = `${pctY}%`;
+            });
+        }
+
+        function runGiantCountdown(number, callback) {
+            const overlay = document.getElementById('countdown-overlay');
+            const text = document.getElementById('countdown-text');
+            if (number <= 0) { overlay.style.display = 'none'; callback(); return; }
+
+            overlay.style.display = 'flex'; text.innerText = number;
+            playSound('countdown');
+            text.style.animation = 'none'; text.offsetHeight;
+            text.style.animation = 'zoomOut 1s ease-in-out';
+
+            setTimeout(() => { runGiantCountdown(number - 1, callback); }, 1000);
+        }
+
+        /* --- MOTOR DE INTERCAMBIO BASADO EN TIEMPO DINÁMICO --- */
+        function startShufflingEngine() {
+            gameState.shuffling = true;
+            updateStatus("¡MEZCLANDO CAJAS! ¡SÍGUELAS CON LA VISTA! 🌀", "#00ffff");
+
+            // Cálculo matemático del total de mezclas según el tiempo configurado
+            const durationMs = gameState.mixDurationMinutes * 60 * 1000;
+            const singleStepTime = gameState.animationSpeed + 50;
+            const totalSwapsRequired = Math.floor(durationMs / singleStepTime);
+
+            let currentSwap = 0;
+
+            function executeSwapStep() {
+                if (currentSwap >= totalSwapsRequired) { finishShufflingEngine(); return; }
+
+                let idxA = Math.floor(Math.random() * gameState.totalBoxes);
+                let idxB = Math.floor(Math.random() * gameState.totalBoxes);
+                while (idxA === idxB) { idxB = Math.floor(Math.random() * gameState.totalBoxes); }
+
+                let boxA = gameState.boxes[idxA];
+                let boxB = gameState.boxes[idxB];
+
+                boxA.element.classList.add('moving');
+                boxB.element.classList.add('moving');
+
+                let tempSlot = boxA.currentSlotIndex;
+                boxA.currentSlotIndex = boxB.currentSlotIndex;
+                boxB.currentSlotIndex = tempSlot;
+
+                playSound('shuffle');
+                refreshPhysicalPositions();
+                currentSwap++;
+
+                setTimeout(() => {
+                    boxA.element.classList.remove('moving');
+                    boxB.element.classList.remove('moving');
+                    executeSwapStep();
+                }, singleStepTime);
+            }
+            executeSwapStep();
+        }
+
+        function finishShufflingEngine() {
+            gameState.shuffling = false;
+            updateStatus(gameState.mode === 1 ? "¿DÓNDE QUEDÓ? ¡TOCA LA CAJA CORRECTA! 👇" : `¡ENCUENTRA LOS 2! INTENTOS: ${gameState.attemptsLeft} ❤️`, "#4ade80");
+
+            gameState.boxes.forEach(box => {
+                box.element.classList.add('interactive');
+                box.element.onclick = () => onBoxSelected(box);
+            });
+        }
+
+        function onBoxSelected(box) {
+            if (gameState.shuffling || box.element.classList.contains('open')) return;
+            box.element.classList.add('open');
+
+            if (gameState.mode === 1) {
+                disableInputClicks();
+                if (box.hasItem) {
+                    box.element.classList.add('correct'); playSound('win');
+                    setTimeout(() => showEndWindow(true, "¡GANASTE! 🎉", "¡Tienes ojos de águila! Encontraste al personaje oculto."), 500);
+                } else {
+                    box.element.classList.add('wrong'); playSound('fail');
+                    setTimeout(() => { revealWinners(); setTimeout(() => showEndWindow(false, "¡OH, NO! CASI... 😢", "Esa caja estaba vacía. ¡La próxima lo harás mejor!"), 1200); }, 300);
+                }
+            } else {
+                if (box.hasItem) {
+                    box.element.classList.add('correct'); playSound('win');
+                    gameState.revealedCount++; gameState.attemptsLeft--;
+                    if (gameState.revealedCount === 2) {
+                        disableInputClicks();
+                        setTimeout(() => showEndWindow(true, "¡BRUTAL! ¡GANASTE! 🏆", "¡Espectacular! Encontraste a los dos amigos ocultos."), 500);
+                    } else { updateStatus(`¡BIEN! ENCONTRASTE UNO. ¡TE QUEDA ${gameState.attemptsLeft} INTENTO! ⭐`, "#ffcb05"); }
+                } else {
+                    box.element.classList.add('wrong'); playSound('fail'); gameState.attemptsLeft--;
+                    if (gameState.attemptsLeft === 0) {
+                        disableInputClicks();
+                        setTimeout(() => { revealWinners(); setTimeout(() => showEndWindow(false, "¡SIN INTENTOS! 💔", "¡Los duendes te han confundido! Inténtalo de nuevo."), 1200); }, 300);
+                    } else { updateStatus(`¡VACÍO! ¡ÚLTIMO INTENTO, CONCÉNTRATE! 🔍`, "#ef4444"); }
+                }
+            }
+        }
+
+        function revealWinners() { gameState.boxes.forEach(box => { if (box.hasItem) box.element.classList.add('open', 'correct'); }); }
+        function disableInputClicks() { gameState.boxes.forEach(box => { box.element.classList.remove('interactive'); box.element.onclick = null; }); }
+        function updateStatus(text, color) { const msg = document.getElementById('status-message'); msg.innerText = text; msg.style.color = color; }
+
+        function showEndWindow(isVictory, title, textBody) {
+            document.getElementById('modal-title').innerText = title;
+            document.getElementById('modal-body').innerText = textBody;
+            document.getElementById('modal-box').className = isVictory ? "modal-content" : "modal-content fail";
+            document.getElementById('result-modal').style.display = 'flex';
+        }
+
+        function resetToMenu() {
+            document.getElementById('result-modal').style.display = 'none';
+            document.getElementById('game-screen').style.display = 'none';
+            document.getElementById('setup-screen').style.display = 'block';
+            updateStatus("¡Mira bien dónde se esconden!", "#ffcb05");
+        }
+
+        // Mantener las posiciones perfectamente centradas si se escala la ventana en tiempo real
+        window.addEventListener('resize', () => { if (gameState.boxes.length > 0) refreshPhysicalPositions(); });
+    </script>
+</body>
+</html>
